@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TRPG AI Platform</title>
+    <script>
+      var pathname = window.location.pathname
+      var search = window.location.search || ''
+      var hash = window.location.hash || ''
+      var redirect = '/' + pathname.split('/').slice(2).join('/')
+      if (redirect === '/') {
+        redirect = '/'
+      }
+      window.location.replace('/TRPG-AI-Platform/?redirect=' + encodeURIComponent(redirect + search + hash))
+    </script>
+  </head>
+  <body></body>
+</html>
