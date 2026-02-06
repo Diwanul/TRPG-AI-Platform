@@ -12,13 +12,16 @@
           placeholder="输入你的 API Key"
         />
         <button @click="saveApiKey">保存</button>
+        <button class="btn-link" @click="toggleGuide">
+          我应该如何获取我的 API？
+        </button>
       </div>
       <div v-if="apiKeySaved" class="success">✅ API Key 已保存</div>
       <router-link to="/game" class="start-button">开始游戏</router-link>
     </div>
 
-    <div class="guide-card">
-      <h2>如何获取 API Key（详细版）</h2>
+    <div v-if="showGuide" class="guide-card">
+      <h2>如何获取 API Key</h2>
 
       <div class="guide-section">
         <h3>OpenAI</h3>
@@ -62,6 +65,7 @@ import { useGameStore } from '../stores/gameStore'
 
 const apiKey = ref('')
 const apiKeySaved = ref(false)
+const showGuide = ref(false)
 const gameStore = useGameStore()
 
 const saveApiKey = () => {
@@ -69,6 +73,10 @@ const saveApiKey = () => {
     gameStore.setApiKey(apiKey.value)
     apiKeySaved.value = true
   }
+}
+
+const toggleGuide = () => {
+  showGuide.value = !showGuide.value
 }
 </script>
 
@@ -165,6 +173,19 @@ button {
   cursor: pointer;
   font-size: 1em;
   margin-top: 10px;
+}
+
+.btn-link {
+  margin-left: 10px;
+  padding: 6px 10px;
+  background: transparent;
+  color: #2c3e50;
+  border: 1px solid #ddd;
+  font-size: 0.85em;
+}
+
+.btn-link:hover {
+  background: #f5f5f5;
 }
 
 button:hover {
