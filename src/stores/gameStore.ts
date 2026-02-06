@@ -138,7 +138,21 @@ export const useGameStore = defineStore('game', () => {
     localStorage.setItem('apiKey', key)
 
     if (key) {
-      aiService.value = createAIService(key)
+      const isOpenRouter = key.startsWith('sk-or-')
+      const referer = typeof window !== 'undefined' ? window.location.origin : ''
+      const title = typeof document !== 'undefined' ? document.title : 'TRPG AI Platform'
+
+      aiService.value = createAIService({
+        apiKey: key,
+        baseURL: isOpenRouter ? 'https://openrouter.ai/api/v1' : undefined,
+        model: isOpenRouter ? 'deepseek/deepseek-r1:free' : undefined,
+        headers: isOpenRouter
+          ? {
+              'HTTP-Referer': referer,
+              'X-Title': title,
+            }
+          : undefined,
+      })
     }
   }
 

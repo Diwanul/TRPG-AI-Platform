@@ -7,6 +7,7 @@ interface AIConfig {
   apiKey: string
   model?: string
   baseURL?: string
+  headers?: Record<string, string>
 }
 
 /**
@@ -38,13 +39,15 @@ export class AIService {
 
   constructor(config: AIConfig) {
     this.model = config.model || 'gpt-3.5-turbo'
-    
+    const extraHeaders = config.headers || {}
+
     // 创建 Axios 客户端，用于发送 HTTP 请求
     this.client = axios.create({
       baseURL: config.baseURL || 'https://api.openai.com/v1',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${config.apiKey}`,
+        ...extraHeaders,
       },
       timeout: 60000, // 60 秒超时
     })
@@ -142,6 +145,6 @@ export class AIService {
 /**
  * 创建 AI 服务实例
  */
-export function createAIService(apiKey: string): AIService {
-  return new AIService({ apiKey })
+export function createAIService(config: AIConfig): AIService {
+  return new AIService(config)
 }

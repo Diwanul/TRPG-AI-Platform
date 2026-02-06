@@ -5,7 +5,15 @@
     <div class="setup-card">
       <h2>开始前的准备</h2>
       <div class="setup-item">
-        <label>OpenAI API Key</label>
+        <label>
+          API Key
+          <span
+            class="hint"
+            title="兼容: OpenAI / Anthropic(Claude) / OpenRouter(DeepSeek R1)"
+          >
+            ?
+          </span>
+        </label>
         <input
           v-model="apiKey"
           type="password"
@@ -153,6 +161,20 @@ label {
   margin-bottom: 8px;
   font-weight: bold;
   color: #2c3e50;
+}
+
+.hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  border-radius: 50%;
+  border: 1px solid #bbb;
+  color: #666;
+  font-size: 0.75em;
+  cursor: help;
 }
 
 input {
