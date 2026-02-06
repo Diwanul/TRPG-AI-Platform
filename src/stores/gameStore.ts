@@ -140,7 +140,7 @@ export const useGameStore = defineStore('game', () => {
     if (key) {
       const isOpenRouter = key.startsWith('sk-or-')
       const referer = typeof window !== 'undefined' ? window.location.origin : ''
-      const title = typeof document !== 'undefined' ? document.title : 'TRPG AI Platform'
+      const title = 'TRPG AI Platform'
 
       aiService.value = createAIService({
         apiKey: key,
