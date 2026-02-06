@@ -91,12 +91,16 @@ const ensureAiPlayers = (players: AIPlayer[], count: number): AIPlayer[] => {
 }
 
 const parseJsonFromText = (text: string) => {
-  const start = text.indexOf('{')
-  const end = text.lastIndexOf('}')
+  const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  const candidate = codeBlockMatch ? codeBlockMatch[1] : text
+
+  const start = candidate.indexOf('{')
+  const end = candidate.lastIndexOf('}')
   if (start >= 0 && end >= 0 && end > start) {
-    return JSON.parse(text.slice(start, end + 1))
+    return JSON.parse(candidate.slice(start, end + 1))
   }
-  return JSON.parse(text)
+
+  throw new Error('AI 返回的内容不是有效 JSON，请重试或补充设定。')
 }
 
 export const useGameStore = defineStore('game', () => {
@@ -290,7 +294,7 @@ export const useGameStore = defineStore('game', () => {
     isSetupLoading.value = true
 
     try {
-      const prompt = `请基于以下世界设定，生成一个适合玩家的角色卡(JSON)：\n${buildSetupSummary()}\n\n要求：\n- 返回 JSON 格式，字段为 name, title, class, background\n- 不要输出多余说明`
+      const prompt = `请基于以下世界设定，生成一个适合玩家的角色卡(JSON)：\n${buildSetupSummary()}\n\n要求：\n- 只返回 JSON，不要输出任何解释或文本\n- 字段为 name, title, class, background\n- 示例：{"name":"","title":"","class":"","background":""}`
 
       const response = await aiService.value.getDMResponse(
         prompt,
@@ -305,6 +309,10 @@ export const useGameStore = defineStore('game', () => {
         class: data.class || '',
         background: data.background || '',
       }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '角色生成失败'
+      addSetupMessage('system', message, '系统')
+      throw error
     } finally {
       isSetupLoading.value = false
     }
@@ -322,7 +330,7 @@ export const useGameStore = defineStore('game', () => {
     isSetupLoading.value = true
 
     try {
-      const prompt = `请基于以下设定生成 ${count} 名 AI 队友(JSON)：\n${buildSetupSummary()}\n\n要求：\n- 返回 JSON 格式：{ "players": [ { "name": "", "title": "", "role": "", "background": "" } ] }\n- 不要输出多余说明`
+      const prompt = `请基于以下设定生成 ${count} 名 AI 队友(JSON)：\n${buildSetupSummary()}\n\n要求：\n- 只返回 JSON，不要输出任何解释或文本\n- JSON 格式：{ "players": [ { "name": "", "title": "", "role": "", "background": "" } ] }`
 
       const response = await aiService.value.getDMResponse(
         prompt,
@@ -343,6 +351,10 @@ export const useGameStore = defineStore('game', () => {
         })),
         count
       )
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'AI 队友生成失败'
+      addSetupMessage('system', message, '系统')
+      throw error
     } finally {
       isSetupLoading.value = false
     }
