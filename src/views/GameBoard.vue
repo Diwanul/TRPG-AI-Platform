@@ -1,22 +1,42 @@
 <template>
   <div class="game-board">
     <div class="game-container">
-      <!-- 侧边栏：角色信息 -->
+      <!-- 侧边栏：阶段与操作 -->
       <aside class="sidebar">
-        <div class="character-card">
-          <h3>角色信息</h3>
-          <div v-if="gameStore.characterCard" class="character-info">
-            <p><strong>{{ gameStore.characterCard.name }}</strong></p>
-            <p>职业: {{ gameStore.characterCard.class }}</p>
-            <p>等级: {{ gameStore.characterCard.level }}</p>
-            <p>HP: {{ gameStore.characterCard.hp }}/{{ gameStore.characterCard.maxHp }}</p>
+        <div class="phase-card">
+          <h3>阶段</h3>
+          <p class="phase-text">当前：{{ gameStore.isOuter ? '游戏外层' : '游戏内层' }}</p>
+          <div class="phase-actions">
+            <button
+              v-if="gameStore.isOuter"
+              @click="handleEnterInner"
+              :disabled="!gameStore.hasApiKey || gameStore.isSetupLoading"
+              class="btn-primary"
+            >
+              进入游戏内层
+            </button>
+            <button
+              v-else
+              @click="handleExitToOuter"
+              class="btn-secondary"
+            >
+              返回外层
+            </button>
           </div>
-          <div v-else class="no-character">
-            <p>暂无角色</p>
+          <p v-if="!gameStore.hasApiKey" class="phase-warning">
+            ⚠️ 请先在主页设置 API Key
+          </p>
+        </div>
+
+        <div v-if="gameStore.isInner" class="character-card">
+          <h3>角色信息</h3>
+          <div class="character-info">
+            <p><strong>{{ gameStore.userDisplayName }}</strong></p>
+            <p>职业: {{ gameStore.setupState.userCharacter.class || '未填写' }}</p>
           </div>
         </div>
-        
-        <div class="game-actions">
+
+        <div v-if="gameStore.isInner" class="game-actions">
           <button @click="handleNewGame" :disabled="!gameStore.canChat" class="btn-primary">
             开始新游戏
           </button>
@@ -26,57 +46,260 @@
         </div>
       </aside>
 
-      <!-- 主区域：聊天界面 -->
+      <!-- 主区域 -->
       <main class="chat-area">
-        <div class="messages-container" ref="messagesContainer">
-          <div
-            v-for="(msg, index) in gameStore.messages"
-            :key="index"
-            :class="['message', `message-${msg.role}`]"
-          >
-            <div class="message-header">
-              <span class="message-role">{{ getRoleName(msg.role) }}</span>
-              <span v-if="msg.timestamp" class="message-time">
-                {{ formatTime(msg.timestamp) }}
-              </span>
-            </div>
-            <div class="message-content">{{ msg.content }}</div>
-          </div>
+        <!-- 外层：设置向导 -->
+        <div v-if="gameStore.isOuter" class="setup-container">
+          <section class="setup-panel">
+            <h2>游戏外层设置</h2>
 
-          <!-- 加载指示器 -->
-          <div v-if="gameStore.isLoading" class="message message-assistant">
-            <div class="message-header">
-              <span class="message-role">DM</span>
+            <div class="form-grid">
+              <div class="form-item">
+                <label>规则系统</label>
+                <input
+                  v-model="gameStore.setupState.ruleSystem"
+                  placeholder="例如：D&D 5e / COC / 自定义"
+                />
+              </div>
+
+              <div class="form-item">
+                <label>用户身份</label>
+                <select v-model="gameStore.setupState.userRole">
+                  <option value="PL">玩家（PL）</option>
+                  <option value="DM">DM（主持人）</option>
+                </select>
+              </div>
+
+              <div class="form-item">
+                <label>模组 / 世界</label>
+                <input
+                  v-model="gameStore.setupState.moduleWorld"
+                  placeholder="例如：幽暗森林 / 城市冒险"
+                />
+              </div>
+
+              <div class="form-item">
+                <label>AI 风格</label>
+                <select v-model="gameStore.setupState.aiStyle">
+                  <option value="">未选择</option>
+                  <option value="严肃">严肃</option>
+                  <option value="幽默">幽默</option>
+                  <option value="沙盒">沙盒</option>
+                  <option value="战术">战术</option>
+                  <option value="新手友好">新手友好</option>
+                </select>
+              </div>
+
+              <div class="form-item full">
+                <label>资源内容</label>
+                <textarea
+                  v-model="gameStore.setupState.resources"
+                  placeholder="例如：使用 5e SRD / 本地规则补丁"
+                  rows="3"
+                ></textarea>
+              </div>
+
+              <div class="form-item full">
+                <label>世界设定 / 队友设定</label>
+                <textarea
+                  v-model="gameStore.setupState.worldNotes"
+                  placeholder="补充世界背景、队友关系等"
+                  rows="3"
+                ></textarea>
+              </div>
             </div>
-            <div class="message-content loading">
-              <span class="dot"></span>
-              <span class="dot"></span>
-              <span class="dot"></span>
+
+            <div class="divider"></div>
+
+            <h3>你的角色（PC）</h3>
+            <div class="form-grid">
+              <div class="form-item">
+                <label>名字</label>
+                <input v-model="gameStore.setupState.userCharacter.name" placeholder="角色名" />
+              </div>
+              <div class="form-item">
+                <label>称号</label>
+                <input v-model="gameStore.setupState.userCharacter.title" placeholder="例如：银刃" />
+              </div>
+              <div class="form-item">
+                <label>职业</label>
+                <input v-model="gameStore.setupState.userCharacter.class" placeholder="例如：游侠" />
+              </div>
+              <div class="form-item full">
+                <label>背景</label>
+                <textarea
+                  v-model="gameStore.setupState.userCharacter.background"
+                  placeholder="简短背景描述"
+                  rows="2"
+                ></textarea>
+              </div>
             </div>
-          </div>
+
+            <button
+              class="btn-secondary"
+              @click="handleGenerateUserCharacter"
+              :disabled="!gameStore.canSetupChat"
+            >
+              AI 引导生成角色
+            </button>
+
+            <div class="divider"></div>
+
+            <h3>AI 队友（可选）</h3>
+            <div class="form-grid">
+              <div class="form-item">
+                <label>AI 队友数量 (0-3)</label>
+                <input
+                  v-model.number="aiPlayerCount"
+                  type="number"
+                  min="0"
+                  max="3"
+                  @change="handleAiPlayerCountChange"
+                />
+              </div>
+              <div class="form-item">
+                <label>快速生成</label>
+                <button
+                  class="btn-secondary"
+                  @click="handleGenerateAiPlayers"
+                  :disabled="!gameStore.canSetupChat || aiPlayerCount === 0"
+                >
+                  AI 生成队友
+                </button>
+              </div>
+            </div>
+
+            <div v-if="gameStore.setupState.aiPlayers.length" class="ai-players">
+              <div
+                v-for="player in gameStore.setupState.aiPlayers"
+                :key="player.id"
+                class="ai-player-card"
+              >
+                <h4>{{ player.name || 'AI 队友' }}</h4>
+                <div class="form-grid">
+                  <div class="form-item">
+                    <label>名字</label>
+                    <input v-model="player.name" placeholder="AI 角色名" />
+                  </div>
+                  <div class="form-item">
+                    <label>称号</label>
+                    <input v-model="player.title" placeholder="称号" />
+                  </div>
+                  <div class="form-item">
+                    <label>定位</label>
+                    <input v-model="player.role" placeholder="例如：法师/坦克" />
+                  </div>
+                  <div class="form-item full">
+                    <label>背景</label>
+                    <textarea v-model="player.background" rows="2"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="guide-panel">
+            <div class="guide-header">
+              <h2>外层引导对话</h2>
+              <button
+                class="btn-secondary"
+                @click="handleGuideReset"
+              >
+                清空引导
+              </button>
+            </div>
+
+            <div class="messages-container" ref="setupMessagesContainer">
+              <div
+                v-for="(msg, index) in gameStore.setupMessages"
+                :key="index"
+                :class="['message', `message-${msg.role}`]"
+              >
+                <div class="message-header">
+                  <span class="message-role">{{ msg.senderName || getRoleName(msg.role) }}</span>
+                  <span v-if="msg.timestamp" class="message-time">
+                    {{ formatTime(msg.timestamp) }}
+                  </span>
+                </div>
+                <div class="message-content">{{ msg.content }}</div>
+              </div>
+
+              <div v-if="gameStore.isSetupLoading" class="message message-assistant">
+                <div class="message-header">
+                  <span class="message-role">引导者</span>
+                </div>
+                <div class="message-content loading">
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-area">
+              <textarea
+                v-model="setupInput"
+                @keydown.enter.exact.prevent="handleSetupSend"
+                placeholder="向引导者提问或描述设定..."
+                :disabled="!gameStore.canSetupChat || gameStore.isSetupLoading"
+                rows="3"
+              ></textarea>
+              <button
+                @click="handleSetupSend"
+                :disabled="!gameStore.canSetupChat || gameStore.isSetupLoading || !setupInput.trim()"
+                class="btn-send"
+              >
+                发送
+              </button>
+            </div>
+          </section>
         </div>
 
-        <!-- 输入区 -->
-        <div class="input-area">
-          <textarea
-            v-model="userInput"
-            @keydown.enter.exact.prevent="handleSend"
-            placeholder="输入你的行动或对话... (Enter 发送, Shift+Enter 换行)"
-            :disabled="!gameStore.canChat || gameStore.isLoading"
-            rows="3"
-          ></textarea>
-          <button
-            @click="handleSend"
-            :disabled="!gameStore.canChat || gameStore.isLoading || !userInput.trim()"
-            class="btn-send"
-          >
-            发送
-          </button>
-        </div>
+        <!-- 内层：游戏对话 -->
+        <div v-else class="inner-container">
+          <div class="messages-container" ref="messagesContainer">
+            <div
+              v-for="(msg, index) in gameStore.messages"
+              :key="index"
+              :class="['message', `message-${msg.role}`]"
+            >
+              <div class="message-header">
+                <span class="message-role">{{ msg.senderName || getRoleName(msg.role) }}</span>
+                <span v-if="msg.timestamp" class="message-time">
+                  {{ formatTime(msg.timestamp) }}
+                </span>
+              </div>
+              <div class="message-content">{{ msg.content }}</div>
+            </div>
 
-        <!-- 提示信息 -->
-        <div v-if="!gameStore.hasApiKey" class="warning">
-          ⚠️ 请先在主页设置 API Key
+            <div v-if="gameStore.isLoading" class="message message-assistant">
+              <div class="message-header">
+                <span class="message-role">DM</span>
+              </div>
+              <div class="message-content loading">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-area">
+            <textarea
+              v-model="userInput"
+              @keydown.enter.exact.prevent="handleSend"
+              placeholder="输入你的行动或对话... (Enter 发送, Shift+Enter 换行)"
+              :disabled="!gameStore.canChat || gameStore.isLoading"
+              rows="3"
+            ></textarea>
+            <button
+              @click="handleSend"
+              :disabled="!gameStore.canChat || gameStore.isLoading || !userInput.trim()"
+              class="btn-send"
+            >
+              发送
+            </button>
+          </div>
         </div>
       </main>
     </div>
@@ -84,14 +307,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, nextTick, onMounted, watch } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 
 const gameStore = useGameStore()
 const userInput = ref('')
-const messagesContainer = ref<HTMLElement | null>(null)
+const setupInput = ref('')
+const aiPlayerCount = ref(gameStore.setupState.aiPlayerCount)
 
-// 发送消息
+const messagesContainer = ref<HTMLElement | null>(null)
+const setupMessagesContainer = ref<HTMLElement | null>(null)
+
+// 内层发送消息
 const handleSend = async () => {
   if (!userInput.value.trim() || !gameStore.canChat) return
 
@@ -100,18 +327,36 @@ const handleSend = async () => {
 
   try {
     await gameStore.sendMessage(input)
-    await scrollToBottom()
+    await scrollToBottom(messagesContainer)
   } catch (error) {
     console.error('发送消息失败:', error)
   }
 }
 
-// 开始新游戏
-const handleNewGame = () => {
-  if (confirm('确定要开始新游戏吗？当前进度将被清空。')) {
-    gameStore.startNewGame()
-    scrollToBottom()
+// 外层发送消息
+const handleSetupSend = async () => {
+  if (!setupInput.value.trim() || !gameStore.canSetupChat) return
+
+  const input = setupInput.value
+  setupInput.value = ''
+
+  try {
+    await gameStore.sendSetupMessage(input)
+    await scrollToBottom(setupMessagesContainer)
+  } catch (error) {
+    console.error('发送引导消息失败:', error)
   }
+}
+
+// 进入内层
+const handleEnterInner = async () => {
+  await gameStore.enterInnerGame()
+  await scrollToBottom(messagesContainer)
+}
+
+// 返回外层
+const handleExitToOuter = () => {
+  gameStore.exitToOuter()
 }
 
 // 清空历史
@@ -121,11 +366,47 @@ const handleClear = () => {
   }
 }
 
+// 开始新游戏
+const handleNewGame = () => {
+  if (confirm('确定要开始新游戏吗？当前进度将被清空。')) {
+    gameStore.startNewGame()
+    scrollToBottom(messagesContainer)
+  }
+}
+
+// 引导清空
+const handleGuideReset = () => {
+  gameStore.clearSetupMessages()
+}
+
+// 生成用户角色
+const handleGenerateUserCharacter = async () => {
+  try {
+    await gameStore.generateUserCharacter()
+  } catch (error) {
+    console.error('生成角色失败:', error)
+  }
+}
+
+// 生成 AI 队友
+const handleGenerateAiPlayers = async () => {
+  try {
+    await gameStore.generateAiPlayers()
+  } catch (error) {
+    console.error('生成 AI 队友失败:', error)
+  }
+}
+
+// AI 队友数量变化
+const handleAiPlayerCountChange = () => {
+  gameStore.updateAiPlayerCount(aiPlayerCount.value)
+}
+
 // 滚动到底部
-const scrollToBottom = async () => {
+const scrollToBottom = async (containerRef: { value: HTMLElement | null }) => {
   await nextTick()
-  if (messagesContainer.value) {
-    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+  if (containerRef.value) {
+    containerRef.value.scrollTop = containerRef.value.scrollHeight
   }
 }
 
@@ -148,9 +429,16 @@ const formatTime = (timestamp: number): string => {
   })
 }
 
-// 页面加载时滚动到底部
+watch(
+  () => gameStore.setupState.aiPlayerCount,
+  (count) => {
+    aiPlayerCount.value = count
+  }
+)
+
 onMounted(() => {
-  scrollToBottom()
+  scrollToBottom(messagesContainer)
+  scrollToBottom(setupMessagesContainer)
 })
 </script>
 
@@ -177,6 +465,7 @@ onMounted(() => {
   gap: 20px;
 }
 
+.phase-card,
 .character-card {
   background: white;
   border-radius: 12px;
@@ -184,6 +473,7 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.phase-card h3,
 .character-card h3 {
   margin: 0 0 15px 0;
   color: #2c3e50;
@@ -191,15 +481,29 @@ onMounted(() => {
   padding-bottom: 10px;
 }
 
-.character-info p {
-  margin: 8px 0;
+.phase-text {
+  margin: 0 0 10px 0;
   color: #555;
 }
 
-.no-character {
-  text-align: center;
-  color: #999;
-  padding: 20px 0;
+.phase-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.phase-warning {
+  margin-top: 10px;
+  font-size: 0.9em;
+  color: #856404;
+  background: #fff3cd;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.character-info p {
+  margin: 8px 0;
+  color: #555;
 }
 
 .game-actions {
@@ -208,7 +512,7 @@ onMounted(() => {
   gap: 10px;
 }
 
-/* 聊天区域 */
+/* 主区域 */
 .chat-area {
   flex: 1;
   background: white;
@@ -219,6 +523,99 @@ onMounted(() => {
   overflow: hidden;
 }
 
+.setup-container {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 20px;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.setup-panel,
+.guide-panel {
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  overflow: hidden;
+}
+
+.guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 16px;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-item.full {
+  grid-column: span 2;
+}
+
+label {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+input,
+select,
+textarea {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.divider {
+  height: 1px;
+  background: #e0e0e0;
+  margin: 8px 0;
+}
+
+.ai-players {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-player-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.ai-player-card h4 {
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+}
+
+.inner-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .messages-container {
   flex: 1;
   overflow-y: auto;
@@ -226,6 +623,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  background: #fff;
 }
 
 /* 消息样式 */
@@ -266,7 +664,7 @@ onMounted(() => {
   color: #856404;
   border: 1px solid #ffc107;
   text-align: center;
-  max-width: 60%;
+  max-width: 70%;
 }
 
 .message-header {
@@ -330,6 +728,7 @@ onMounted(() => {
   display: flex;
   gap: 10px;
   align-items: flex-end;
+  background: #fff;
 }
 
 .input-area textarea {
@@ -399,17 +798,12 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* 警告信息 */
-.warning {
-  padding: 12px 20px;
-  background: #fff3cd;
-  color: #856404;
-  border-top: 1px solid #ffc107;
-  text-align: center;
-  font-size: 14px;
+@media (max-width: 1024px) {
+  .setup-container {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* 响应式 */
 @media (max-width: 768px) {
   .game-container {
     flex-direction: column;
@@ -418,14 +812,6 @@ button:disabled {
 
   .sidebar {
     width: 100%;
-  }
-
-  .chat-area {
-    height: 60vh;
-  }
-
-  .message {
-    max-width: 90%;
   }
 }
 </style>

@@ -2,6 +2,7 @@
 export interface GameMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
+  senderName?: string
   timestamp?: number
 }
 
@@ -16,6 +17,36 @@ export interface CharacterCard {
   background?: string
   equipment?: string[]
   [key: string]: any
+}
+
+// 用户角色（玩家 PC）
+export interface UserCharacter {
+  name: string
+  title: string
+  class: string
+  background: string
+}
+
+// AI 玩家（AI PL）
+export interface AIPlayer {
+  id: string
+  name: string
+  title: string
+  role: string
+  background: string
+}
+
+// 游戏外层设置
+export interface SetupState {
+  ruleSystem: string
+  userRole: 'PL' | 'DM'
+  moduleWorld: string
+  aiStyle: string
+  resources: string
+  worldNotes: string
+  userCharacter: UserCharacter
+  aiPlayerCount: number
+  aiPlayers: AIPlayer[]
 }
 
 // 游戏状态类型
