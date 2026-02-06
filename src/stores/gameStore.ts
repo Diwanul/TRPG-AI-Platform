@@ -103,6 +103,10 @@ const parseJsonFromText = (text: string) => {
   throw new Error('AI 返回的内容不是有效 JSON，请重试或补充设定。')
 }
 
+const hasBasicSetupInfo = (setup: SetupState) => {
+  return Boolean(setup.ruleSystem || setup.moduleWorld || setup.worldNotes)
+}
+
 export const useGameStore = defineStore('game', () => {
   // 基础状态
   const apiKey = ref('')
@@ -291,10 +295,15 @@ export const useGameStore = defineStore('game', () => {
       throw new Error('AI 服务未初始化，请先设置 API Key')
     }
 
+    if (!hasBasicSetupInfo(setupState.value)) {
+      addSetupMessage('system', '请先填写规则系统或世界设定，再生成角色。', '系统')
+      return
+    }
+
     isSetupLoading.value = true
 
     try {
-      const prompt = `请基于以下世界设定，生成一个适合玩家的角色卡(JSON)：\n${buildSetupSummary()}\n\n要求：\n- 只返回 JSON，不要输出任何解释或文本\n- 字段为 name, title, class, background\n- 示例：{"name":"","title":"","class":"","background":""}`
+      const prompt = `请基于以下世界设定，生成一个适合玩家的角色卡(JSON)：\n${buildSetupSummary()}\n\n要求：\n- 只返回 JSON，不要输出任何解释或文本\n- 字段为 name, title, class, background\n- 即使信息不足也要返回 JSON，用空字符串占位\n- 必须以 { 开始，以 } 结束\n- 示例：{"name":"","title":"","class":"","background":""}`
 
       const response = await aiService.value.getDMResponse(
         prompt,
@@ -327,10 +336,15 @@ export const useGameStore = defineStore('game', () => {
     const count = setupState.value.aiPlayerCount
     if (count <= 0) return
 
+    if (!hasBasicSetupInfo(setupState.value)) {
+      addSetupMessage('system', '请先填写规则系统或世界设定，再生成队友。', '系统')
+      return
+    }
+
     isSetupLoading.value = true
 
     try {
-      const prompt = `请基于以下设定生成 ${count} 名 AI 队友(JSON)：\n${buildSetupSummary()}\n\n要求：\n- 只返回 JSON，不要输出任何解释或文本\n- JSON 格式：{ "players": [ { "name": "", "title": "", "role": "", "background": "" } ] }`
+      const prompt = `请基于以下设定生成 ${count} 名 AI 队友(JSON)：\n${buildSetupSummary()}\n\n要求：\n- 只返回 JSON，不要输出任何解释或文本\n- 即使信息不足也要返回 JSON，用空字符串占位\n- 必须以 { 开始，以 } 结束\n- JSON 格式：{ "players": [ { "name": "", "title": "", "role": "", "background": "" } ] }`
 
       const response = await aiService.value.getDMResponse(
         prompt,
