@@ -56,7 +56,7 @@
           <li>复制生成的 Key（通常以 sk-or- 开头）</li>
           <li>回到本页面，粘贴到上方输入框并保存</li>
         </ol>
-        <p class="note">系统会自动识别 OpenRouter Key 并使用 DeepSeek R1 免费模型。</p>
+        <p class="note">系统会自动识别 OpenRouter Key 并使用 R1T2 Chimera 免费模型。</p>
       </div>
 
       <div class="guide-section">

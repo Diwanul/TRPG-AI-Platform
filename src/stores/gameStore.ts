@@ -145,7 +145,7 @@ export const useGameStore = defineStore('game', () => {
       aiService.value = createAIService({
         apiKey: key,
         baseURL: isOpenRouter ? 'https://openrouter.ai/api/v1' : undefined,
-        model: isOpenRouter ? 'deepseek/deepseek-r1:free' : undefined,
+        model: isOpenRouter ? 'tngtech/deepseek-r1t2-chimera:free' : undefined,
         headers: isOpenRouter
           ? {
               'HTTP-Referer': referer,
