@@ -530,6 +530,7 @@ onMounted(() => {
   height: 100%;
   padding: 20px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .setup-panel,
@@ -541,7 +542,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  overflow: hidden;
+  overflow: auto;
+  min-height: 0;
 }
 
 .guide-header {
