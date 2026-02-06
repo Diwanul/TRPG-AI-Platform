@@ -16,6 +16,43 @@
       <div v-if="apiKeySaved" class="success">✅ API Key 已保存</div>
       <router-link to="/game" class="start-button">开始游戏</router-link>
     </div>
+
+    <div class="guide-card">
+      <h2>如何获取 API Key（详细版）</h2>
+
+      <div class="guide-section">
+        <h3>OpenAI</h3>
+        <ol>
+          <li>打开官网并登录: https://platform.openai.com/</li>
+          <li>进入 "API keys" 页面</li>
+          <li>点击 "Create new secret key"</li>
+          <li>复制生成的 Key（只显示一次）</li>
+          <li>回到本页面，粘贴到上方输入框并保存</li>
+        </ol>
+        <p class="note">提示: Key 泄露会产生费用，请不要分享给别人。</p>
+      </div>
+
+      <div class="guide-section">
+        <h3>Anthropic (Claude)</h3>
+        <ol>
+          <li>打开官网并登录: https://console.anthropic.com/</li>
+          <li>进入 "API Keys" 页面</li>
+          <li>点击 "Create Key"</li>
+          <li>复制生成的 Key</li>
+          <li>回到本页面，粘贴到上方输入框并保存</li>
+        </ol>
+        <p class="note">当前默认使用 OpenAI，如需 Claude 我可以帮你切换。</p>
+      </div>
+
+      <div class="guide-section">
+        <h3>常见问题</h3>
+        <ul>
+          <li>API Key 会保存在你的浏览器本地，不会上传到服务器。</li>
+          <li>如果显示 401/Invalid key，说明 Key 无效或输错。</li>
+          <li>如果显示 429，说明请求太频繁或额度不足。</li>
+        </ul>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -60,6 +97,43 @@ p {
   border: 1px solid #ddd;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.guide-card {
+  max-width: 700px;
+  margin: 30px auto 0;
+  padding: 30px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  text-align: left;
+}
+
+.guide-card h2 {
+  margin-top: 0;
+  color: #2c3e50;
+}
+
+.guide-section {
+  margin-top: 20px;
+}
+
+.guide-section h3 {
+  margin-bottom: 8px;
+  color: #34495e;
+}
+
+.guide-section ol,
+.guide-section ul {
+  padding-left: 18px;
+  margin: 8px 0 0;
+}
+
+.note {
+  margin-top: 8px;
+  font-size: 0.9em;
+  color: #666;
 }
 
 .setup-item {
