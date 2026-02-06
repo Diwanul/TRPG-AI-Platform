@@ -56,11 +56,24 @@
       </div>
 
       <div class="guide-section">
+        <h3>OpenRouter (DeepSeek R1)</h3>
+        <ol>
+          <li>打开官网并登录: https://openrouter.ai/</li>
+          <li>进入 "API Keys" 页面</li>
+          <li>点击 "Create Key" 生成 Key</li>
+          <li>复制生成的 Key（通常以 sk-or- 开头）</li>
+          <li>回到本页面，粘贴到上方输入框并保存</li>
+        </ol>
+        <p class="note">系统会自动识别 OpenRouter Key 并使用 DeepSeek R1 免费模型。</p>
+      </div>
+
+      <div class="guide-section">
         <h3>常见问题</h3>
         <ul>
           <li>API Key 会保存在你的浏览器本地，不会上传到服务器。</li>
           <li>如果显示 401/Invalid key，说明 Key 无效或输错。</li>
           <li>如果显示 429，说明请求太频繁或额度不足。</li>
+          <li>OpenRouter 免费模型高峰期可能限流，属于正常现象。</li>
         </ul>
       </div>
     </div>
